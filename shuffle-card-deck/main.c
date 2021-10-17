@@ -50,8 +50,8 @@ int main(void)
         return EXIT_FAILURE;
     }
 
-    int deck[DECK_SIZE], i;
-    for (i = 0; i < DECK_SIZE; i++)
+    int deck[DECK_SIZE];
+    for (int i = 0; i < DECK_SIZE; i++)
     {
         deck[i] = i + 1;
     }
@@ -64,7 +64,7 @@ int main(void)
     // https://levelup.gitconnected.com/8-ways-to-measure-execution-time-in-c-c-48634458d0f9
     unsigned long long start_ms = GetTickCount();
 
-    for (i = 0; i < rounds; i++)
+    for (int i = 0; i < rounds; i++)
     {
         // Calling only rand() is super fast, so adding actual shuffle makes rounds
         // more "long running" (at least for large rounds)
@@ -96,12 +96,12 @@ void now(char *out_str, int n)
 // See https://stackoverflow.com/questions/42321370/fisher-yates-shuffling-algorithm-in-c
 void shuffle(int *deck, int (*rand_ptr)(void))
 {
-    int j, r, tmp;
-    for (j = DECK_SIZE - 1; j > 0; j--)
+    int r, tmp;
+    for (int i = DECK_SIZE - 1; i > 0; i--)
     {
-        r = (*rand_ptr)() % (j + 1);
+        r = (*rand_ptr)() % (i + 1);
         tmp = deck[r];
-        deck[r] = deck[j];
-        deck[j] = tmp;
+        deck[r] = deck[i];
+        deck[i] = tmp;
     }
 }
