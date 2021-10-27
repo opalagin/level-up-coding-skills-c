@@ -1,8 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <string.h>
 
 #include <windows.h>
+
+#include "xorshift.h"
 
 #define DECK_SIZE 52
 
@@ -12,8 +15,17 @@ typedef enum
     WELL512A
 } Algos;
 
+char algo_name[255];
+
 void now(char *out, int n);
-void shuffle(int *deck, int (*rand_ptr)(void));
+void shuffle(int *deck, unsigned (*rand_ptr)(void));
+
+void builtin_rand_init();
+unsigned builtin_rand();
+
+struct xorshift32_state xorshift_state;
+void xorshift_init();
+unsigned xorshift();
 
 int main(void)
 {
@@ -31,13 +43,19 @@ int main(void)
     }
 
     // pointer to a random function
-    int (*rand_ptr)(void);
+    unsigned (*rand_ptr)(void);
     switch (algo_id)
     {
     case XORSHIFT:
+        strcpy(algo_name, "xosrhift");
+        xorshift_init();
+        rand_ptr = &xorshift;
+        break;
     case WELL512A:
     default:
-        rand_ptr = &rand;
+        strcpy(algo_name, "built-in");
+        builtin_rand_init();
+        rand_ptr = &builtin_rand;
     }
 
     int rounds;
@@ -56,7 +74,7 @@ int main(void)
         deck[i] = i + 1;
     }
 
-    printf("\nfirst card = %i, last card = %i\n", deck[0], deck[51]);
+    // printf("\nfirst card = %i, last card = %i\n", deck[0], deck[51]);
 
     char start_str[12] = {0};
     now(start_str, sizeof(start_str));
@@ -76,12 +94,12 @@ int main(void)
     char end_str[12] = {0};
     now(end_str, sizeof(end_str));
 
-    printf("\nfirst card = %i, last card = %i\n", deck[0], deck[51]);
+    // printf("\nfirst card = %i, last card = %i\n", deck[0], deck[51]);
 
     puts("");
     puts(" Algorithm | Time started |  Time ended  | Total time ");
     puts("-----------+--------------+--------------+------------");
-    printf(" %9s | %12s | %12s | %10llums \n\n", "rand()", start_str, end_str, end_ms - start_ms);
+    printf(" %9s | %12s | %12s | %8llums \n\n", algo_name, start_str, end_str, end_ms - start_ms);
 }
 
 // See https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/time-time32-time64?view=msvc-160
@@ -94,9 +112,9 @@ void now(char *out_str, int n)
 }
 
 // See https://stackoverflow.com/questions/42321370/fisher-yates-shuffling-algorithm-in-c
-void shuffle(int *deck, int (*rand_ptr)(void))
+void shuffle(int *deck, unsigned (*rand_ptr)(void))
 {
-    int r, tmp;
+    unsigned r, tmp;
     for (int i = DECK_SIZE - 1; i > 0; i--)
     {
         r = (*rand_ptr)() % (i + 1);
@@ -104,4 +122,26 @@ void shuffle(int *deck, int (*rand_ptr)(void))
         deck[r] = deck[i];
         deck[i] = tmp;
     }
+}
+
+void builtin_rand_init()
+{
+    time_t t;
+    srand((unsigned)time(&t));
+}
+
+unsigned builtin_rand()
+{
+    return (unsigned)rand();
+}
+
+void xorshift_init()
+{
+    time_t t;
+    xorshift_state.a = (unsigned)time(&t);
+}
+
+unsigned xorshift()
+{
+    return xorshift32(&xorshift_state);
 }
